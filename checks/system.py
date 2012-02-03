@@ -11,11 +11,11 @@ class Disk(object):
     def _parse_df(self, lines, inodes = False, use_mount=False):
         """Multi-platform df output parser
         
-        If use_volume is true the volume rather than the mount point is used
+        If use_mount is true the volume rather than the mount point is used
         to anchor the metric. If false the mount point is used.
 
         e.g. /dev/sda1 .... /my_mount
-        _parse_df picks /dev/sda1 if use_volume, /my_mount if not
+        _parse_df picks /dev/sda1 if use_mount, /my_mount if not
 
         If inodes is True, count inodes instead
         """

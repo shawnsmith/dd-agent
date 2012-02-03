@@ -27,7 +27,7 @@ from tornado.options import define, parse_command_line, options
 
 # agent import
 from emitter import http_emitter, format_body
-from config import get_config
+from config import get_config, get_version
 
 from transaction import Transaction, TransactionManager
 
@@ -98,16 +98,10 @@ class MetricTransaction(Transaction):
         self._trManager.flush_next()
 
 class StatusHandler(tornado.web.RequestHandler):
-
     def get(self):
-
+        """Display some status info"""
         m = MetricTransaction.get_tr_manager()
-       
-        self.write("<table><tr><td>Id</td><td>Size</td><td>Error count</td><td>Next flush</td></tr>")
-        for tr in m.get_transactions():
-            self.write("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % 
-                (tr.get_id(), tr.get_size(), tr.get_error_count(), tr.get_next_flush()))
-        self.write("</table>")
+        self.render("templates/status.html", title="Datadog Agent", tx_mgr = m, version=get_version())
   
 class AgentInputHandler(tornado.web.RequestHandler):
 
@@ -156,13 +150,14 @@ class Application(tornado.web.Application):
 
         handlers = [
             (r"/intake/?", AgentInputHandler),
-            (r"/status/?", StatusHandler),
+            (r"/", StatusHandler)
         ]
 
         settings = dict(
             cookie_secret="12oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
             xsrf_cookies=False,
             debug=True,
+            static_path=os.path.join(os.path.dirname(__file__), "static")
         )
 
         tornado.web.Application.__init__(self, handlers, **settings)

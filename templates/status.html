@@ -1,0 +1,63 @@
+<!--
+______  _______ _______ _______ ______   _____   ______
+|     \ |_____|    |    |_____| |     \ |     | |  ____
+|_____/ |     |    |    |     | |_____/ |_____| |_____|
+
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{ static_url('datadog.css') }}" type="text/css"/>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-28925430-1']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    
+  </head>
+  <body>
+    <div class="header">
+      <div class="header_content">
+        <a name="top"></a>
+        <h1 id="logo">
+          <a href="https://app.datadoghq.com">Datadog</a>
+        </h1>
+        <ul class="top_nav" id="main_nav">
+          <li id="mn-status"><a href="/">Agent Status</a></li>
+        </ul>
+        <ul id="account_nav" class="top_nav account">
+          <li id="an-help"><a href="http://help.datadoghq.com">Help</a></li>
+          <li id="an-setup"><a href="https://app.datadoghq.com/account/settings">Setup</a></li>
+	</ul>
+	<!--header_content--></div>
+      <!--header--></div>
+    
+    <div class="page stream_page clearfix">
+      <table>
+	<tr>
+	  <td>Transaction ID</td>
+	  <td>Size</td>
+	  <td>Error Count</td>
+	  <td>Next Flush</td>
+	</tr>
+	{% for tr in tx_mgr.get_transactions() %}
+	<tr>
+	  <td>{{ tr.get_id() }}</td>
+	  <td>{{ tr.get_size() }}</td>
+	  <td>{{ tr.get_error_count() }}</td>
+	  <td>{{ tr.get_next_flush() }}</td>
+	</tr>
+      {% end %}
+      </table>
+    </div>
+
+    <div class="version_number">Copyright Datadog, Inc. 2012 - {{ version }}</div>
+  </body>
+</html>
