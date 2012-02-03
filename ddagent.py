@@ -98,10 +98,17 @@ class MetricTransaction(Transaction):
         self._trManager.flush_next()
 
 class StatusHandler(tornado.web.RequestHandler):
+    def initialize(self, agent_config):
+        self._agent_config = agent_config
+
     def get(self):
         """Display some status info"""
         m = MetricTransaction.get_tr_manager()
-        self.render("templates/status.html", title="Datadog Agent", tx_mgr = m, version=get_version())
+        self.render("templates/status.html",
+                    title="Datadog Agent",
+                    tx_mgr = m,
+                    version=get_version(),
+                    agent_config=self._agent_config)
   
 class AgentInputHandler(tornado.web.RequestHandler):
 
@@ -150,7 +157,7 @@ class Application(tornado.web.Application):
 
         handlers = [
             (r"/intake/?", AgentInputHandler),
-            (r"/", StatusHandler)
+            (r"/", StatusHandler, dict(agent_config=self._agentConfig))
         ]
 
         settings = dict(

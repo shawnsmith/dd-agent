@@ -1,8 +1,7 @@
-
+import logging
 import sys
 import time
 from datetime import datetime, timedelta
-import logging
 from operator import attrgetter
 
 import tornado.ioloop
@@ -72,25 +71,34 @@ class TransactionManager(object):
         self._MAX_QUEUE_SIZE = max_queue_size
         self._THROTTLING_DELAY = throttling_delay
 
-        self._flush_without_ioloop = False # usefull for tests
+        self._flush_without_ioloop = False # useful for tests
 
-        self._transactions = [] #List of all non commited transactions
+        self._transactions = [] # List of all non commited transactions
         self._total_count = 0 # Maintain size/count not to recompute it everytime
         self._total_size = 0 
 
-        # Global counter to assign a number to each transaction: we may have an issue
-        #  if this overlaps
+        # Global counter to assign a number to each transaction:
+        # we may have an issue if this overlaps
         self._counter = 0
 
         self._trs_to_flush = None # Current transactions being flushed
         self._last_flush = datetime.now() # Last flush (for throttling)
 
-    def get_transactions(self):
-        return self._transactions
+        # Stats to report
+        self._success_count = 0
+        self._last_success_timestamp = None
+
+    def get_success_count(self): return self._success_count
+    def get_last_success_timestamp(self): return self._last_success_timestamp
+    def get_transactions(self): return self._transactions
 
     def print_queue_stats(self):
         logging.info("Queue size: at %s, %s transaction(s), %s KB" % 
-            (time.time(), self._total_count, (self._total_size/1024)))
+                     (time.time(), self._total_count, (self._total_size/1024)))
+        logging.info("Global stats: success=%s, last_ts=%s" %
+                     (self._success_count, self._last_success_timestamp))
+        return "Global stats: success=%s, last=%s\nQueue size: on %s, %s transaction(s), %s KB" % \
+            (self._success_count, self._last_success_timestamp, time.asctime(), self._total_count, (self._total_size/1024))
 
     def get_tr_id(self):
         self._counter =  self._counter + 1
@@ -189,6 +197,6 @@ class TransactionManager(object):
         self._transactions.remove(tr)
         self._total_count = self._total_count - 1
         self._total_size = self._total_size - tr.get_size()
+        self._success_count += 1
+        self._last_success_timestamp = datetime.now()
         self.print_queue_stats()
-
-

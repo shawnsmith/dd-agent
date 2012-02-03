@@ -40,6 +40,23 @@ ______  _______ _______ _______ ______   _____   ______
       <!--header--></div>
     
     <div class="page stream_page clearfix">
+      <h1>Transaction Stats</h1>
+      <p>
+	<em>Number of messages sent:</em>
+	{{ tx_mgr.get_success_count() }}<br/>
+	<em>Last messages successfully sent at</em>
+	{{ tx_mgr.get_last_success_timestamp() }}
+	{{ tx_mgr.print_queue_stats() }}
+      </p>
+
+      <h1>Agent Configuration</h1>
+      {% import pprint %}
+      <blockquote>
+      {{ pprint.pformat(agent_config) }}
+      </blockquote>
+
+      {% if len(tx_mgr.get_transactions()) > 0 %}
+      <h1>Transaction Log</h1>
       <table>
 	<tr>
 	  <td>Transaction ID</td>
@@ -54,6 +71,7 @@ ______  _______ _______ _______ ______   _____   ______
 	  <td>{{ tr.get_error_count() }}</td>
 	  <td>{{ tr.get_next_flush() }}</td>
 	</tr>
+        {% end %}
       {% end %}
       </table>
     </div>
