@@ -66,41 +66,42 @@ class Check(object):
         except:
             self.logger.exception("Trying to install laconic log filter and failed")
 
-    def counter(self, metric):
+    def counter(self, metric, device=None):
         """
         Treats the metric as a counter, i.e. computes its per second derivative
+        Optionally attach the metric to a device.
         ACHTUNG: Resets previous values associated with this metric.
         """
-        self._counters[metric] = True
-        self._sample_store[metric] = []
+        self._counters[(metric, device)] = True
+        self._sample_store[(metric, device)] = []
 
-    def is_counter(self, metric):
+    def is_counter(self, metric, device=None):
         "Is this metric a counter?"
-        return metric in self._counters
+        return (metric, device) in self._counters
 
-    def gauge(self, metric):
+    def gauge(self, metric, device=None):
         """
         Treats the metric as a guage, i.e. keep the data as is
         ACHTUNG: Resets previous values associated with this metric.
         """
-        self._sample_store[metric] = []
+        self._sample_store[(metric, device)] = []
         
-    def is_metric(self, metric):
-        return metric in self._sample_store
+    def is_metric(self, metric, device=None):
+        return (metric, device) in self._sample_store
 
-    def is_gauge(self, metric):
-        return self.is_metric(metric) and \
-               not self.is_counter(metric)
+    def is_gauge(self, metric, device=None):
+        return self.is_metric(metric, device) and \
+               not self.is_counter(metric, device)
 
     def get_metrics(self):
         "Get all metric names"
         return self._sample_store.keys()
 
-    def save_sample(self, metric, value, timestamp=None):
+    def save_sample(self, metric, value, timestamp=None, device=None):
         """Save a simple sample, evict old values if needed"""
         if timestamp is None:
             timestamp = time.time()
-        if metric not in self._sample_store:
+        if (metric, device) not in self._sample_store:
             raise CheckException("Saving a sample for an undefined metric %s" % metric)
         try:
             value = float(value)
@@ -108,77 +109,80 @@ class Check(object):
             raise NaN(ve)
 
         # Data eviction rules
-        if self.is_gauge(metric):
-            self._sample_store[metric] = [(timestamp, value)]
-        elif self.is_counter(metric):
-            if len(self._sample_store[metric]) == 0:
-                self._sample_store[metric] = [(timestamp, value)]
+        if self.is_gauge(metric, device):
+            self._sample_store[(metric, device)] = [(timestamp, value)]
+        elif self.is_counter(metric, device):
+            if len(self._sample_store[(metric, device)]) == 0:
+                self._sample_store[(metric, device)] = [(timestamp, value)]
             else:
-                self._sample_store[metric] = self._sample_store[metric][-1:] + [(timestamp, value)]
+                self._sample_store[(metric, device)] = self._sample_store[(metric, device)][-1:] + [(timestamp, value)]
         else:
             raise CheckException("%s must be either gauge or counter, skipping sample at %s" % (metric, time.ctime(timestamp)))
 
-        if self.is_gauge(metric):
-            assert len(self._sample_store[metric]) in (0, 1), self._sample_store[metric]
-        elif self.is_counter(metric):
-            assert len(self._sample_store[metric]) in (0, 1, 2), self._sample_store[metric]
+        if self.is_gauge(metric, device):
+            assert len(self._sample_store[(metric, device)]) in (0, 1), self._sample_store[(metric, device)]
+        elif self.is_counter(metric, device):
+            assert len(self._sample_store[(metric, device)]) in (0, 1, 2), self._sample_store[(metric, device)]
 
     @classmethod
-    def _rate(cls, sample1, sample2):
-        "Simple rate"
+    def _rate(cls, sample1, sample2, positive=True):
+        "Simple rate, by default, skip negative values."
         try:
             interval = sample2[0] - sample1[0]
             if interval == 0:
                 raise Infinity()
             delta = sample2[1] - sample1[1]
-            return (sample2[0], delta / interval)
+            if positive and delta < 0:
+                raise NaN("Counter wraparound")
+            else:
+                return (sample2[0], delta / interval)
         except Infinity:
             raise
         except Exception, e:
             raise NaN(e)
 
-    def get_sample_with_timestamp(self, metric):
+    def get_sample_with_timestamp(self, metric, device=None):
         "Get (timestamp-epoch-style, value)"
         # Never seen this metric
-        if metric not in self._sample_store:
+        if not self.is_metric(metric, device):
             raise UnknownValue()
 
         # Not enough value to compute rate
-        elif self.is_counter(metric) and len(self._sample_store[metric]) < 2:
+        elif self.is_counter(metric, device) and len(self._sample_store[(metric, device)]) < 2:
             raise UnknownValue()
         
-        elif self.is_counter(metric) and len(self._sample_store[metric]) >= 2:
-            return self._rate(self._sample_store[metric][-2], self._sample_store[metric][-1])
+        elif self.is_counter(metric, device) and len(self._sample_store[(metric, device)]) >= 2:
+            return self._rate(self._sample_store[(metric, device)][-2], self._sample_store[(metric, device)][-1])
 
-        elif self.is_gauge(metric) and len(self._sample_store[metric]) >= 1:
-            return self._sample_store[metric][-1]
+        elif self.is_gauge(metric, device) and len(self._sample_store[(metric, device)]) >= 1:
+            return self._sample_store[(metric, device)][-1]
 
         else:
             raise UnknownValue()
 
-    def get_sample(self, metric):
+    def get_sample(self, metric, device=None):
         "Return the last value for that metric"
-        x = self.get_sample_with_timestamp(metric)
+        x = self.get_sample_with_timestamp(metric, device)
         assert type(x) == types.TupleType and len(x) == 2, x
         return x[1]
         
     def get_samples_with_timestamps(self):
-        "Return all values {metric: (ts, value)}"
+        "Return all values {(metric, device): (ts, value)}"
         values = {}
-        for m in self._sample_store:
+        for m, dev in self._sample_store:
             try:
-                values[m] = self.get_sample_with_timestamp(m)
+                values[(m, dev)] = self.get_sample_with_timestamp(m, dev)
             except:
                 pass
         return values
 
     def get_samples(self):
-        "Return all values {metric: value}"
+        "Return all values {(metric, device): value}"
         values = {}
-        for m in self._sample_store:
+        for m, dev in self._sample_store:
             try:
                 # Discard the timestamp
-                values[m] = self.get_sample_with_timestamp(m)[1]
+                values[(m, dev)] = self.get_sample_with_timestamp(m, dev)[1]
             except:
                 pass
         return values

@@ -157,7 +157,7 @@ class checks:
  
     @recordsize
     def getNetworkTraffic(self):
-        return self._network.check(self.checksLogger, self.agentConfig)
+        return self._network.check(self.agentConfig)
     
     @recordsize
     def getNginxStatus(self):

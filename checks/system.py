@@ -4,7 +4,7 @@ import string
 import subprocess
 import sys
 import time
-from checks import gethostname
+from checks import *
 
 class Disk(object):
 
@@ -119,7 +119,6 @@ class Disk(object):
 
 class IO(object):
     def check(self, logger, agentConfig):
-        logger.debug('getIOStats: start')
         
         ioStats = {}
     
@@ -167,10 +166,9 @@ class IO(object):
                 logger.exception('getIOStats')
                 return False
         else:
-            logger.debug('getIOStats: unsupported platform')
+            logger.warn('getIOStats: unsupported platform')
             return False
             
-        logger.debug('getIOStats: completed, returning')
         return ioStats
 
 
@@ -426,157 +424,78 @@ class Memory(object):
         else:
             return False
     
-class Network(object):
-    def __init__(self):
-        self.networkTrafficStore = {}
-        self.networkTrafficStore["last_ts"] = time.time()
-        self.networkTrafficStore["current_ts"] = self.networkTrafficStore["last_ts"]
+class Network(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
     
-    def check(self, logger, agentConfig):
-        logger.debug('getNetworkTraffic: start')
-        
-        if sys.platform == 'linux2':
-            logger.debug('getNetworkTraffic: linux2')
-            
-            try:
-                logger.debug('getNetworkTraffic: attempting open')
+    def _parse_net(self, lines, timestamp):
+        # skip line 0
+        columnLine = lines[1]
+        _, receiveCols, transmitCols = columnLine.split('|')
+        receiveCols = map(lambda a:'recv_' + a, receiveCols.split())
+        transmitCols = map(lambda a:'trans_' + a, transmitCols.split())
                 
+        cols = receiveCols + transmitCols
+        
+        # Process each line
+        for line in lines[2:]:
+            if line.find(':') < 0: continue
+            # first extract the interface name
+            iface, data = map(string.strip, line.split(':'))
+            # then, each value
+            values = data.split()
+            # and make a (metric, value) pair
+            points = zip(cols, values)
+                    
+            for val in points:
+                # either it's the first time we see this metric
+                if not self.is_metric(val[0], device=iface):
+                    self.logger.debug("New metric: %s" % (val[0],))
+                    self.counter(val[0], device=iface)
+                # or we have this metric in store already, just save the sample
+                self.save_sample(val[0], val[1], timestamp=timestamp, device=iface)
+
+        # Now emit all the metrics
+        traffic = {}
+        samples = self.get_samples()
+        for m, dev in samples:
+            if dev not in traffic:
+                traffic[dev] = {}
+            if m not in traffic[dev]:
+                traffic[dev][m] = {}
+            traffic[dev][m] = samples[(m, dev)]
+        return traffic
+
+    def check(self, agentConfig):
+        """Turn
+
+        $ cat /proc/net/dev
+        Inter-|   Receive                                                |  transmit
+         face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+            lo:230111604  386946    0    0    0     0          0         0 230111604  386946    0    0    0     0       0          0 
+          eth0:42422869  192029    0    0    0     0          0         0 55900265  163422    0    0    0     0       0          0
+
+        into
+
+        {
+        "lo": {"trans_bytes": "...", "recv_bytes": "..."},
+        "eth0": {..., }
+        }
+        """
+        if sys.platform == 'linux2':
+            try:
                 proc = open('/proc/net/dev', 'r')
                 lines = proc.readlines()
-                self.networkTrafficStore["current_ts"] = time.time()
-                
+                proc.close()
+
+                return self._parse_net(lines, time.time())
+
             except IOError, e:
                 logger.exception('getNetworkTraffic')
                 return False
-            
-            proc.close()
-            
-            logger.debug('getNetworkTraffic: open success, parsing')
-            
-            columnLine = lines[1]
-            _, receiveCols , transmitCols = columnLine.split('|')
-            receiveCols = map(lambda a:'recv_' + a, receiveCols.split())
-            transmitCols = map(lambda a:'trans_' + a, transmitCols.split())
-            
-            cols = receiveCols + transmitCols
-            
-            logger.debug('getNetworkTraffic: parsing, looping')
-            
-            faces = {}
-            for line in lines[2:]:
-                if line.find(':') < 0: continue
-                face, data = line.split(':')
-                faceData = dict(zip(cols, data.split()))
-                faces[face] = faceData
-            
-            
-            interfaces = {}
-            
-            interval = self.networkTrafficStore["current_ts"] - self.networkTrafficStore["last_ts"]
-            logger.debug('getNetworkTraffic: interval (s) %s' % interval)
-            if interval == 0:
-                logger.warn('0-sample interval, skipping network checks')
-                return False
-            self.networkTrafficStore["last_ts"] = self.networkTrafficStore["current_ts"]
-
-            # Now loop through each interface
-            for face in faces:
-                key = face.strip()
-                
-                # We need to work out the traffic since the last check so first time we store the current value
-                # then the next time we can calculate the difference
-                if key in self.networkTrafficStore:
-                    interfaces[key] = {}
-                    interfaces[key]['recv_bytes'] = (long(faces[face]['recv_bytes']) - long(self.networkTrafficStore[key]['recv_bytes']))/interval
-                    interfaces[key]['trans_bytes'] = (long(faces[face]['trans_bytes']) - long(self.networkTrafficStore[key]['trans_bytes']))/interval
-                    
-                    interfaces[key]['recv_bytes'] = str(interfaces[key]['recv_bytes'])
-                    interfaces[key]['trans_bytes'] = str(interfaces[key]['trans_bytes'])
-                    
-                    # And update the stored value to subtract next time round
-                    self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
-                    self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
-                    
-                else:
-                    self.networkTrafficStore[key] = {}
-                    self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
-                    self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
-        
-            logger.debug('getNetworkTraffic: completed, returning')
-                    
-            return interfaces
-            
-        elif sys.platform.find('freebsd') != -1:
-            logger.debug('getNetworkTraffic: freebsd')
-            
-            try:
-                logger.debug('getNetworkTraffic: attempting Popen (netstat)')
-                netstat = subprocess.Popen(['netstat', '-nbid', ' grep Link'], stdout=subprocess.PIPE, close_fds=True)
-                
-                logger.debug('getNetworkTraffic: attempting Popen (grep)')
-                grep = subprocess.Popen(['grep', 'Link'], stdin = netstat.stdout, stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-                
-            except:
-                logger.exception('getNetworkTraffic')
-                
-                return False
-            
-            logger.debug('getNetworkTraffic: open success, parsing')
-            
-            lines = grep.split('\n')
-            
-            # Loop over available data for each inteface
-            faces = {}
-            for line in lines:
-                line = re.split(r'\s+', line)
-                length = len(line)
-                
-                if length == 13:
-                    faceData = {'recv_bytes': line[6], 'trans_bytes': line[9], 'drops': line[10], 'errors': long(line[5]) + long(line[8])}
-                elif length == 12:
-                    faceData = {'recv_bytes': line[5], 'trans_bytes': line[8], 'drops': line[9], 'errors': long(line[4]) + long(line[7])}
-                else:
-                    # Malformed or not enough data for this interface, so we skip it
-                    continue
-                
-                face = line[0]
-                faces[face] = faceData
-                
-            logger.debug('getNetworkTraffic: parsed, looping')
-                
-            interfaces = {}
-            
-            # Now loop through each interface
-            for face in faces:
-                key = face.strip()
-                
-                # We need to work out the traffic since the last check so first time we store the current value
-                # then the next time we can calculate the difference
-                if key in self.networkTrafficStore:
-                    interfaces[key] = {}
-                    interfaces[key]['recv_bytes'] = long(faces[face]['recv_bytes']) - long(self.networkTrafficStore[key]['recv_bytes'])
-                    interfaces[key]['trans_bytes'] = long(faces[face]['trans_bytes']) - long(self.networkTrafficStore[key]['trans_bytes'])
-                    
-                    interfaces[key]['recv_bytes'] = str(interfaces[key]['recv_bytes'])
-                    interfaces[key]['trans_bytes'] = str(interfaces[key]['trans_bytes'])
-                    
-                    # And update the stored value to subtract next time round
-                    self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
-                    self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
-                    
-                else:
-                    self.networkTrafficStore[key] = {}
-                    self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
-                    self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
-        
-            logger.debug('getNetworkTraffic: completed, returning')
-    
-            return interfaces
-        
         else:       
-            logger.debug('getNetworkTraffic: other platform, returning')
-        
-            return False    
+            logger.warn('Cannot compute network traffic on this platform.')
+            return False
 
 class Processes(object):
     def check(self, logger, agentConfig):

@@ -61,6 +61,15 @@ none                  985964       1  985963    1% /lib/init/rw
 /dev/sdf             46474080  478386 45995694    2% /data
 """
 
+    linux2_net_1 = """Inter-|   Receive                                                |  transmit
+face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+   lo:230111604  386946    0    0    0     0          0         0 230111604  386946    0    0    0     0       0          0 
+ eth0:42422869  192029    0    0    0     0          0         0 55900265  163422    0    0    0     0       0          0"""
+    linux2_net_2 = """Inter-|   Receive                                                |  transmit
+face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+   lo:230111605  386947    0    0    0     0          0         0 230111605  38694    0    0    0     0       0          0 
+ eth0:42422870  192030    0    0    0     0          0         0 55900266  163423    0    0    0     0       0          0"""
+
     def testDfParser(self):
         global logger
         disk = Disk()
@@ -91,7 +100,15 @@ none                  985964       1  985963    1% /lib/init/rw
         assert res[-3][:4] == ["/data", 52403200 / 1024 / 1024, 40909112 / 1024 / 1024, 11494088 / 1024 / 1024], res[-2]
         assert res[-2][:4] == ["/data2", 52403200 / 1024 / 1024, 40909112 / 1024 / 1024, 11494088 / 1024 / 1024], res[-1]
         assert res[-1][:4] == ["/data3", 52403200 / 1024 / 1024, 40909112 / 1024 / 1024, 11494088 / 1024 / 1024], res[-2]
-        
+
+    def testNetwork(self):
+        global logger
+        net = Network(logger)
+        net._parse_net(TestSystem.linux2_net_1.split("\n"), 1)
+        res = net._parse_net(TestSystem.linux2_net_2.split("\n"), 2)
+        assert res["lo"]["recv_packets"] == 1
+        assert res["eth0"]["recv_packets"] == 1
+        assert res["lo"]["trans_compressed"] == 0
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,12 @@ class TestCore(unittest.TestCase):
         self.c = Check(logger)
         self.c.gauge("test-metric")
         self.c.counter("test-counter")
+        self.c.counter("test-counter", device="eth0")
+        self.c.gauge("test-metric", device="eth0")
+        self.c.gauge("test-metric", device="lo0")
+
+    def tearDown(self):
+        del self.c
 
     def test_gauge(self):
         self.assertEquals(self.c.is_gauge("test-metric"), True)
@@ -23,7 +29,7 @@ class TestCore(unittest.TestCase):
         # new value, old one should be gone
         self.c.save_sample("test-metric", 2.0)
         self.assertEquals(self.c.get_sample("test-metric"), 2.0)
-        self.assertEquals(len(self.c._sample_store["test-metric"]), 1)
+        self.assertEquals(len(self.c._sample_store[("test-metric", None)]), 1)
         # with explicit timestamp
         self.c.save_sample("test-metric", 3.0, 1298066183.607717)
         self.assertEquals(self.c.get_sample_with_timestamp("test-metric"), (1298066183.607717, 3.0))
@@ -42,17 +48,27 @@ class TestCore(unittest.TestCase):
         self.assertEquals(self.c.get_sample("test-counter"), 1.0)
         self.assertEquals(self.c.get_sample_with_timestamp("test-counter"), (2.0, 1.0))
         self.c.save_sample("test-counter", -2.0, 3.0)
-        self.assertEquals(self.c.get_sample_with_timestamp("test-counter"), (3.0, -4.0))
+        self.assertRaises(CheckException, self.c.get_sample_with_timestamp, "test-counter")
 
     def test_samples(self):
         self.assertEquals(self.c.get_samples(), {})
         self.c.save_sample("test-metric", 1.0, 0.0)  # value, ts
         self.c.save_sample("test-counter", 1.0, 1.0) # value, ts
-        self.c.save_sample("test-counter", 0.0, 2.0) # value, ts
-        assert "test-metric"  in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
-        self.assertEquals(self.c.get_samples_with_timestamps()["test-metric"], (0.0, 1.0))
-        assert "test-counter" in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
-        self.assertEquals(self.c.get_samples_with_timestamps()["test-counter"], (2.0, -1.0))
+        self.c.save_sample("test-counter", 2.0, 2.0) # value, ts
+        assert ("test-metric", None)  in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
+        self.assertEquals(self.c.get_samples_with_timestamps()[("test-metric", None)], (0.0, 1.0))
+        assert ("test-counter", None) in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
+        self.assertEquals(self.c.get_samples_with_timestamps()[("test-counter", None)], (2.0, 1.0))
+
+    def test_devices(self):
+        self.c.save_sample("test-metric", 1.0, timestamp=1.0, device="eth0")
+        self.c.save_sample("test-metric", 2.0, timestamp=2.0, device="lo0")
+        self.c.save_sample("test-counter", 1.0, timestamp=1.0, device="eth0")
+        assert ("test-metric", "eth0") in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
+        assert ("test-metric", "lo0") in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
+        assert ("test-metric", None) not in self.c.get_samples_with_timestamps(), self.c.get_samples_with_timestamps()
+        # wrong device
+        self.assertRaises(CheckException, self.c.save_sample, "test-counter", 1.0, 1.0, "eth1")
 
 if __name__ == '__main__':
     unittest.main()
