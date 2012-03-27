@@ -5,6 +5,7 @@ import os.path
 import re
 import itertools
 import math
+from checks import Check
 
 def _fst(groups):
     if groups is not None and len(groups) > 0:
@@ -12,8 +13,11 @@ def _fst(groups):
     else:
         return None
 
-class Cassandra(object):    
+class Cassandra(Check):
 
+    def __init__(self, logger):
+        Check.__init__(self, logger)
+    
     UNITS_FACTOR = {
          'bytes': 1,
          'KB': 1024,
@@ -254,10 +258,9 @@ class Cassandra(object):
 
         return results
 
-    def check(self, logger, agentConfig):
+    def check(self, agentConfig):
         """Return a dictionary of metrics
         Or False to indicate that there are no data to report"""
-        logger.debug('Cassandra: start')
         try:
             # How do we get to nodetool
             nodetool = agentConfig.get("cassandra_nodetool", None)
@@ -265,7 +268,7 @@ class Cassandra(object):
                 return False
             else:
                 if not os.path.exists(nodetool) or not os.path.isfile(nodetool):
-                    logger.warn("Cassandra's nodetool cannot be found at %s" % (nodetool,))
+                    self.logger.warn("Cassandra's nodetool cannot be found at %s" % (nodetool,))
                     return False
                 
             # Connect to what?
@@ -273,7 +276,7 @@ class Cassandra(object):
             if cassandra_host is None:
                 if nodetool is not None:
                     cassandra_host = "localhost"
-                    logger.info("Nodetool is going to assume %s" % (cassandra_host))
+                    self.logger.info("Nodetool is going to assume %s" % (cassandra_host))
                 else:
                     return False
                     
@@ -282,19 +285,19 @@ class Cassandra(object):
             if cassandra_port is None:
                 if nodetool is not None:
                     cassandra_port = 8080
-                    logger.info("Nodetool is going to assume %s" % (cassandra_port))
+                    self.logger.info("Nodetool is going to assume %s" % (cassandra_port))
                 else:
                     return False
             
             nodetool_cmd = "%s -h %s -p %s" % (nodetool, cassandra_host, cassandra_port)
-            logger.debug("Connecting to cassandra with: %s" % (nodetool_cmd,))
+            self.logger.debug("Connecting to cassandra with: %s" % (nodetool_cmd,))
             bufsize = -1
             results = {}
             
             # nodetool info
             pipe = Popen("%s %s" % (nodetool_cmd, "info"), shell=True, universal_newlines=True, bufsize=bufsize, stdout=PIPE, stderr=None).stdout
             self._parseInfo(pipe.read(), results)
-            logger.debug("Cassandra info: %s" % results)
+            self.logger.debug("Cassandra info: %s" % results)
             pipe.close()
             
             # nodetool cfstats
@@ -308,8 +311,8 @@ class Cassandra(object):
             pipe.close()
             
             return results
-        except Exception, e:
-            logger.exception(e)
+        except:
+            self.logger.exception("Cannot get cassandra metrics")
             return False
 
 
@@ -319,5 +322,5 @@ if __name__ == "__main__":
     c = Cassandra()
     c.check(logging,{'cassandra_nodetool': '/usr/local/cassandra/bin/nodetool',
                      'cassandra_host': 'localhost',
-                     'cassandra_port': 8080,
+                     'cassandra_port': 7199,
                     })

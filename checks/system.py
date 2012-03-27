@@ -4,10 +4,12 @@ import string
 import subprocess
 import sys
 import time
-from checks import gethostname
+from checks import gethostname, Check
 
-class Disk(object):
-
+class Disk(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
+        
     def _parse_df(self, lines, inodes = False, use_mount=False):
         """Multi-platform df output parser
         
@@ -90,12 +92,12 @@ class Disk(object):
                     # Available
                     parts[3] = int(parts[3])
             except IndexError:
-                logger.exception("Cannot parse %s" % (parts,))
+                self.logger.exception("Cannot parse %s" % (parts,))
 
             usageData.append(parts)
         return usageData
     
-    def check(self, logger, agentConfig):
+    def check(self, agentConfig):
         """Get disk space/inode stats"""
 
         # Check test_system for some examples of output
@@ -113,19 +115,18 @@ class Disk(object):
             inodes = self._parse_df(df.stdout.read(), inodes=True, use_mount=use_mount)
             return (disks, inodes)
         except:
-            logger.exception('getDiskUsage')
+            self.logger.exception('getDiskUsage')
             return False
 
 
-class IO(object):
-    def check(self, logger, agentConfig):
-        logger.debug('getIOStats: start')
+class IO(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
         
+    def check(self, agentConfig):
         ioStats = {}
     
         if sys.platform == 'linux2':
-            logger.debug('getIOStats: linux2')
-            
             headerRegexp = re.compile(r'([%\\/\-a-zA-Z0-9]+)[\s+]?')
             itemRegexp = re.compile(r'^([a-zA-Z0-9\/]+)')
             valueRegexp = re.compile(r'\d+\.\d+')
@@ -164,128 +165,68 @@ class IO(object):
                         ioStats[device][headerName] = values[headerIndex]
                     
             except:
-                logger.exception('getIOStats')
+                self.logger.exception('getIOStats')
                 return False
         else:
-            logger.debug('getIOStats: unsupported platform')
+            self.logger.warn('getIOStats: unsupported platform')
             return False
-            
-        logger.debug('getIOStats: completed, returning')
         return ioStats
 
-
-class Load(object):
-    def __init__(self, linuxProcFsLocation):
+class Load(Check):
+    def __init__(self, logger, linuxProcFsLocation):
         self.linuxProcFsLocation = linuxProcFsLocation
     
-    def check(self, logger, agentConfig):
-        logger.debug('getLoadAvrgs: start')
-        
+    def check(self, agentConfig):
         # If Linux like procfs system is present and mounted we use loadavg, else we use uptime
         if sys.platform == 'linux2' or (sys.platform.find('freebsd') != -1 and self.linuxProcFsLocation != False):
-            
             try:
-                logger.debug('getLoadAvrgs: attempting open')
-                
                 if sys.platform == 'linux2':
                     loadAvrgProc = open('/proc/loadavg', 'r')
                 else:
                     loadAvrgProc = open(self.linuxProcFsLocation + '/loadavg', 'r')
-                    
                 uptime = loadAvrgProc.readlines()
-                
             except IOError, e:
-                logger.error('getLoadAvrgs: exception = ' + str(e))
+                self.logger.exception('getLoadAvrgs')
                 return False
             
-            logger.debug('getLoadAvrgs: open success')
-                
             loadAvrgProc.close()
-            
             uptime = uptime[0] # readlines() provides a list but we want a string
         
-        elif sys.platform.find('freebsd') != -1 and self.linuxProcFsLocation == False:
-            logger.debug('getLoadAvrgs: freebsd (uptime)')
-            
+        elif sys.platform.find('freebsd') != -1 or sys.platform == 'darwin':
             try:
-                logger.debug('getLoadAvrgs: attempting Popen')
-                
                 uptime = subprocess.Popen(['uptime'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-                
             except:
-                logger.exception('getLoadAvrgs')
+                self.logger.exception('getLoadAvrgs')
                 return False
-                
-            logger.debug('getLoadAvrgs: Popen success')
-            
-        elif sys.platform == 'darwin':
-            logger.debug('getLoadAvrgs: darwin')
-            
-            # Get output from uptime
-            try:
-                logger.debug('getLoadAvrgs: attempting Popen')
-                
-                uptime = subprocess.Popen(['uptime'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-                
-            except Exception, e:
-                logger.exception('getLoadAvrgs')
-                return False
-                
-            logger.debug('getLoadAvrgs: Popen success')
-        
-        logger.debug('getLoadAvrgs: parsing')
                 
         # Split out the 3 load average values
         loadAvrgs = [res.replace(',', '.') for res in re.findall(r'([0-9]+[\.,]\d+)', uptime)]
         loadAvrgs = {'1': loadAvrgs[0], '5': loadAvrgs[1], '15': loadAvrgs[2]}  
-    
-        logger.debug('getLoadAvrgs: completed, returning')
-    
         return loadAvrgs
 
-
-class Memory(object):
-    def __init__(self, linuxProcFsLocation, topIndex):
+class Memory(Check):
+    def __init__(self, logger, linuxProcFsLocation, topIndex):
+        Check.__init__(self, logger)
         self.linuxProcFsLocation = linuxProcFsLocation
         self.topIndex = topIndex
     
-    def check(self, logger, agentConfig):
-        logger.debug('getMemoryUsage: start')
-        
+    def check(self, agentConfig):
         # If Linux like procfs system is present and mounted we use meminfo, else we use "native" mode (vmstat and swapinfo)
         if sys.platform == 'linux2' or (sys.platform.find('freebsd') != -1 and self.linuxProcFsLocation != False):
-            
-            if sys.platform == 'linux2':
-                logger.debug('getMemoryUsage: linux2')
-            else:
-                logger.debug('getMemoryUsage: freebsd (meminfo)')
-            
             try:
-                logger.debug('getMemoryUsage: attempting open')
-                
                 if sys.platform == 'linux2':
                     meminfoProc = open('/proc/meminfo', 'r')
                 else:
                     meminfoProc = open(self.linuxProcFsLocation + '/meminfo', 'r')
-                
                 lines = meminfoProc.readlines()
-                
             except IOError, e:
-                logger.error('getMemoryUsage: exception = ' + str(e))
+                self.logger.exception('getMemoryUsage')
                 return False
-                
-            logger.debug('getMemoryUsage: Popen success, parsing')
-            
             meminfoProc.close()
-            
-            logger.debug('getMemoryUsage: open success, parsing')
-            
+
             regexp = re.compile(r'([0-9]+)') # We run this several times so one-time compile now
-            
+
             meminfo = {}
-            
-            logger.debug('getMemoryUsage: parsing, looping')
-            
             # Loop through and extract the numerical values
             for line in lines:
                 values = line.split(':')
@@ -300,15 +241,11 @@ class Memory(object):
                     
                 except IndexError:
                     break
-                    
-            logger.debug('getMemoryUsage: parsing, looped')
             
             memData = {}
             
             # Phys
             try:
-                logger.debug('getMemoryUsage: formatting (phys)')
-                
                 physTotal = int(meminfo['MemTotal'])
                 physFree = int(meminfo['MemFree'])
                 physUsed = physTotal - physFree
@@ -320,17 +257,13 @@ class Memory(object):
                                 
             # Stops the agent crashing if one of the meminfo elements isn't set
             except IndexError:
-                logger.debug('getMemoryUsage: formatting (phys) IndexError - Cached, MemTotal or MemFree not present')
+                self.logger.debug('getMemoryUsage: formatting (phys) IndexError - Cached, MemTotal or MemFree not present')
                 
             except KeyError:
-                logger.debug('getMemoryUsage: formatting (phys) KeyError - Cached, MemTotal or MemFree not present')
-            
-            logger.debug('getMemoryUsage: formatted (phys)')
+                self.logger.debug('getMemoryUsage: formatting (phys) KeyError - Cached, MemTotal or MemFree not present')
             
             # Swap
             try:
-                logger.debug('getMemoryUsage: formatting (swap)')
-                
                 swapTotal = int(meminfo['SwapTotal'])
                 swapFree = int(meminfo['SwapFree'])
                 swapUsed = swapTotal - swapFree
@@ -341,35 +274,22 @@ class Memory(object):
                                 
             # Stops the agent crashing if one of the meminfo elements isn't set
             except IndexError:
-                logger.debug('getMemoryUsage: formatting (swap) IndexErro) - SwapTotal or SwapFree not present')
+                self.logger.debug('getMemoryUsage: formatting (swap) IndexErro) - SwapTotal or SwapFree not present')
                 
             except KeyError:
-                logger.debug('getMemoryUsage: formatting (swap) KeyError - SwapTotal or SwapFree not present')
-            
-            logger.debug('getMemoryUsage: formatted (swap), completed, returning')
+                self.logger.debug('getMemoryUsage: formatting (swap) KeyError - SwapTotal or SwapFree not present')
             
             return memData  
             
         elif sys.platform.find('freebsd') != -1 and self.linuxProcFsLocation == False:
-            logger.debug('getMemoryUsage: freebsd (native)')
-            
             try:
-                logger.debug('getMemoryUsage: attempting Popen (sysctl)')
                 physTotal = subprocess.Popen(['sysctl', '-n', 'hw.physmem'], stdout = subprocess.PIPE, close_fds = True).communicate()[0]
-                
-                logger.debug('getMemoryUsage: attempting Popen (vmstat)')
                 vmstat = subprocess.Popen(['vmstat', '-H'], stdout = subprocess.PIPE, close_fds = True).communicate()[0]
-                
-                logger.debug('getMemoryUsage: attempting Popen (swapinfo)')
                 swapinfo = subprocess.Popen(['swapinfo', '-k'], stdout = subprocess.PIPE, close_fds = True).communicate()[0]
-
             except:
-                logger.exception('getMemoryUsage')
-                
+                self.logger.exception('getMemoryUsage')
                 return False
                 
-            logger.debug('getMemoryUsage: Popen success, parsing')
-
             # First we parse the information about the real memory
             lines = vmstat.split('\n')
             physParts = re.findall(r'([0-9]\d+)', lines[2])
@@ -377,8 +297,6 @@ class Memory(object):
             physTotal = int(physTotal.strip()) / 1024 # physFree is returned in B, but we need KB so we convert it
             physFree = int(physParts[1])
             physUsed = int(physTotal - physFree)
-    
-            logger.debug('getMemoryUsage: parsed vmstat')
     
             # And then swap
             lines = swapinfo.split('\n')
@@ -389,69 +307,46 @@ class Memory(object):
             physFree = int(physFree) / 1024
             swapUsed = int(swapParts[3]) / 1024
             swapFree = int(swapParts[4]) / 1024
-    
-            logger.debug('getMemoryUsage: parsed swapinfo, completed, returning')
-    
-            return {'physUsed' : physUsed, 'physFree' : physFree, 'swapUsed' : swapUsed, 'swapFree' : swapFree, 'cached' : None}
+
+                return {'physUsed' : physUsed, 'physFree' : physFree, 'swapUsed' : swapUsed, 'swapFree' : swapFree, 'cached' : None}
             
         elif sys.platform == 'darwin':
-            logger.debug('getMemoryUsage: darwin')
-            
             try:
-                logger.debug('getMemoryUsage: attempting Popen (top)')              
                 top = subprocess.Popen(['top', '-l 1'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-                
-                logger.debug('getMemoryUsage: attempting Popen (sysctl)')
                 sysctl = subprocess.Popen(['sysctl', 'vm.swapusage'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-                
             except:
-                logger.exception('getMemoryUsage')
+                self.logger.exception('getMemoryUsage')
                 return False
-            
-            logger.debug('getMemoryUsage: Popen success, parsing')
             
             # Deal with top
             lines = top.split('\n')
             physParts = re.findall(r'([0-9]\d+)', lines[self.topIndex])
             
-            logger.debug('getMemoryUsage: parsed top')
-            
             # Deal with sysctl
             swapParts = re.findall(r'([0-9]+\.\d+)', sysctl)
             
-            logger.debug('getMemoryUsage: parsed sysctl, completed, returning')
-            
             return {'physUsed' : physParts[3], 'physFree' : physParts[4], 'swapUsed' : swapParts[1], 'swapFree' : swapParts[2], 'cached' : None}    
-            
         else:
             return False
     
-class Network(object):
-    def __init__(self):
+class Network(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
         self.networkTrafficStore = {}
         self.networkTrafficStore["last_ts"] = time.time()
         self.networkTrafficStore["current_ts"] = self.networkTrafficStore["last_ts"]
     
-    def check(self, logger, agentConfig):
-        logger.debug('getNetworkTraffic: start')
-        
+    def check(self, agentConfig):
         if sys.platform == 'linux2':
-            logger.debug('getNetworkTraffic: linux2')
-            
             try:
-                logger.debug('getNetworkTraffic: attempting open')
-                
                 proc = open('/proc/net/dev', 'r')
                 lines = proc.readlines()
                 self.networkTrafficStore["current_ts"] = time.time()
-                
             except IOError, e:
-                logger.exception('getNetworkTraffic')
+                self.logger.exception('getNetworkTraffic')
                 return False
             
             proc.close()
-            
-            logger.debug('getNetworkTraffic: open success, parsing')
             
             columnLine = lines[1]
             _, receiveCols , transmitCols = columnLine.split('|')
@@ -460,8 +355,6 @@ class Network(object):
             
             cols = receiveCols + transmitCols
             
-            logger.debug('getNetworkTraffic: parsing, looping')
-            
             faces = {}
             for line in lines[2:]:
                 if line.find(':') < 0: continue
@@ -469,13 +362,11 @@ class Network(object):
                 faceData = dict(zip(cols, data.split()))
                 faces[face] = faceData
             
-            
             interfaces = {}
             
             interval = self.networkTrafficStore["current_ts"] - self.networkTrafficStore["last_ts"]
-            logger.debug('getNetworkTraffic: interval (s) %s' % interval)
             if interval == 0:
-                logger.warn('0-sample interval, skipping network checks')
+                self.logger.warn('0-sample interval, skipping network checks')
                 return False
             self.networkTrafficStore["last_ts"] = self.networkTrafficStore["current_ts"]
 
@@ -502,26 +393,16 @@ class Network(object):
                     self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
                     self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
         
-            logger.debug('getNetworkTraffic: completed, returning')
-                    
             return interfaces
             
         elif sys.platform.find('freebsd') != -1:
-            logger.debug('getNetworkTraffic: freebsd')
-            
             try:
-                logger.debug('getNetworkTraffic: attempting Popen (netstat)')
                 netstat = subprocess.Popen(['netstat', '-nbid', ' grep Link'], stdout=subprocess.PIPE, close_fds=True)
-                
-                logger.debug('getNetworkTraffic: attempting Popen (grep)')
                 grep = subprocess.Popen(['grep', 'Link'], stdin = netstat.stdout, stdout=subprocess.PIPE, close_fds=True).communicate()[0]
                 
             except:
-                logger.exception('getNetworkTraffic')
-                
+                self.logger.exception('getNetworkTraffic')
                 return False
-            
-            logger.debug('getNetworkTraffic: open success, parsing')
             
             lines = grep.split('\n')
             
@@ -541,8 +422,6 @@ class Network(object):
                 
                 face = line[0]
                 faces[face] = faceData
-                
-            logger.debug('getNetworkTraffic: parsed, looping')
                 
             interfaces = {}
             
@@ -568,41 +447,21 @@ class Network(object):
                     self.networkTrafficStore[key] = {}
                     self.networkTrafficStore[key]['recv_bytes'] = faces[face]['recv_bytes']
                     self.networkTrafficStore[key]['trans_bytes'] = faces[face]['trans_bytes']
-        
-            logger.debug('getNetworkTraffic: completed, returning')
-    
             return interfaces
-        
         else:       
-            logger.debug('getNetworkTraffic: other platform, returning')
-        
             return False    
 
-class Processes(object):
-    def check(self, logger, agentConfig):
-        logger.debug('getProcesses: start')
+class Processes(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
         
-        # Memory logging (case 27152)
-        if agentConfig['debugMode'] and sys.platform == 'linux2':
-            mem = subprocess.Popen(['free', '-m'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-            logger.debug('getProcesses: memory before Popen - ' + str(mem))
-        
+    def check(self, agentConfig):
         # Get output from ps
         try:
-            logger.debug('getProcesses: attempting Popen')
-            
             ps = subprocess.Popen(['ps', 'auxww'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-            
         except:
-            logger.exception('getProcesses')
+            self.logger.exception('getProcesses')
             return False
-        
-        logger.debug('getProcesses: Popen success, parsing')
-        
-        # Memory logging (case 27152)
-        if agentConfig['debugMode'] and sys.platform == 'linux2':
-            mem = subprocess.Popen(['free', '-m'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
-            logger.debug('getProcesses: memory after Popen - ' + str(mem))
         
         # Split out each process
         processLines = ps.split('\n')
@@ -612,24 +471,22 @@ class Processes(object):
         
         processes = []
         
-        logger.debug('getProcesses: Popen success, parsing, looping')
-        
         for line in processLines:
             line = line.split(None, 10)
             processes.append(map(lambda s: s.strip(), line))
-        
-        logger.debug('getProcesses: completed, returning')
         
         return { 'processes':   processes,
                  'apiKey':      agentConfig['apiKey'],
                  'host':        gethostname(agentConfig) }
             
-class Cpu(object):
-    def check(self, logger, agentConfig):
+class Cpu(Check):
+    def __init__(self, logger):
+        Check.__init__(self, logger)
+        
+    def check(self, agentConfig):
         """Return an aggregate of CPU stats across all CPUs
         When figures are not available, False is sent back.
         """
-        logger.debug('getCPUStats: start')
         def format_results(us, sy, wa, idle, st):
             return { 'cpuUser': us, 'cpuSystem': sy, 'cpuWait': wa, 'cpuIdle': idle, 'cpuStolen': st }
                     
@@ -639,7 +496,6 @@ class Cpu(object):
                 return float(data[legend.index(name)])
             else:
                 # FIXME return a float or False, would trigger type error if not python
-                logger.debug("Cannot extract cpu value %s from %s (%s)" % (name, data, legend))
                 return 0
 
         if sys.platform == 'linux2':
@@ -711,8 +567,8 @@ class Cpu(object):
                 cpu_st   = 0
                 return format_results(cpu_user, cpu_sys, cpu_wait, cpu_idle, cpu_st)
             else:
-                logger.warn("Expected to get at least 4 lines of data from iostat instead of just " + str(iostats[:max(80, len(iostats))]))
+                self.logger.warn("Expected to get at least 4 lines of data from iostat instead of just " + str(iostats[:max(80, len(iostats))]))
                 return False
         else:
-            logger.warn("CPUStats: unsupported platform")
+            self.logger.warn("CPUStats: unsupported platform")
             return False

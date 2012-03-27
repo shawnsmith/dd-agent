@@ -25,7 +25,7 @@ def get_parsed_args():
     return options, args
 
 def get_version():
-    return "2.2.7"
+    return "2.3.0"
 
 def skip_leading_wsp(f):
     "Works on a file, returns a file-like object"
@@ -128,7 +128,6 @@ def get_config(parse_args = True, cfg_path=None):
         else:
             agentConfig['graphite_listen_port'] = None
 
-
         # Optional config
         # FIXME not the prettiest code ever...
         if config.has_option('Main', 'use_mount'):
@@ -180,7 +179,7 @@ def get_config(parse_args = True, cfg_path=None):
             agentConfig['rabbitMQPass'] = config.get('Main', 'rabbitmq_pass')
 
         if config.has_option('Main', 'mongodb_server'):
-            agentConfig['MongoDBServer'] = config.get('Main', 'mongodb_server')
+            agentConfig['mongodb_server'] = config.get('Main', 'mongodb_server')
 
         if config.has_option('Main', 'couchdb_server'):
             agentConfig['CouchDBServer'] = config.get('Main', 'couchdb_server')
@@ -282,20 +281,6 @@ def get_config(parse_args = True, cfg_path=None):
     if 'nginxStatusUrl' in agentConfig and agentConfig['nginxStatusUrl'] == None:
         sys.stderr.write('You must provide a config value for nginx_status_url. If you do not wish to use Nginx monitoring, leave it as its default value - http://www.example.com/nginx_status.\n')
         sys.exit(2)
-
-    if 'MySQLServer' in agentConfig and agentConfig['MySQLServer'] != '' and 'MySQLUser' in agentConfig and agentConfig['MySQLUser'] != '' and 'MySQLPass' in agentConfig:
-        try:
-            import MySQLdb
-        except ImportError:
-            sys.stderr.write('You have configured MySQL for monitoring, but the MySQLdb module is not installed. For more info, see: http://help.datadoghq.com.\n')
-            sys.exit(2)
-
-    if 'MongoDBServer' in agentConfig and agentConfig['MongoDBServer'] != '':
-        try:
-            import pymongo
-        except ImportError:
-            sys.stderr.write('You have configured MongoDB for monitoring, but the pymongo module is not installed.\n')
-            sys.exit(2)
 
     for section in config.sections():
         rawConfig[section] = {}

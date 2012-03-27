@@ -52,15 +52,6 @@ def getUuid():
     # on the back-end if need be, based on mac addresses.
     return uuid.uuid5(uuid.NAMESPACE_DNS, platform.node() + str(uuid.getnode())).hex
 
-def recordsize(func):
-    "Record the size of the response"
-    def wrapper(*args, **kwargs):
-        logger = logging.getLogger("checks")
-        res = func(*args, **kwargs)
-        logger.debug("SIZE: %s wrote %d bytes uncompressed" % (func, len(str(res))))
-        return res
-    return wrapper
-
 class checks:
     def __init__(self, agentConfig, rawConfig, emitter):
         self.agentConfig = agentConfig
@@ -90,28 +81,28 @@ class checks:
         
         self._apache = Apache(self.checksLogger)
         self._nginx = Nginx(self.checksLogger)
-        self._disk = Disk()
-        self._io = IO()
-        self._load = Load(self.linuxProcFsLocation)
-        self._memory = Memory(self.linuxProcFsLocation, self.topIndex)
-        self._network = Network()
-        self._processes = Processes()
-        self._cpu = Cpu()
+        self._disk = Disk(self.checksLogger)
+        self._io = IO(self.checksLogger)
+        self._load = Load(self.checksLogger, self.linuxProcFsLocation)
+        self._memory = Memory(self.checksLogger, self.linuxProcFsLocation, self.topIndex)
+        self._network = Network(self.checksLogger)
+        self._processes = Processes(self.checksLogger)
+        self._cpu = Cpu(self.checksLogger)
         self._couchdb = CouchDb(self.checksLogger)
         self._mongodb = MongoDb(self.checksLogger)
         self._mysql = MySql(self.checksLogger)
         self._pgsql = PostgreSql(self.checksLogger)
-        self._rabbitmq = RabbitMq()
-        self._ganglia = Ganglia()
-        self._cassandra = Cassandra()
+        self._rabbitmq = RabbitMq(self.checksLogger)
+        self._ganglia = Ganglia(self.checksLogger)
+        self._cassandra = Cassandra(self.checksLogger)
         self._redis = Redis(self.checksLogger)
         self._jvm = Jvm(self.checksLogger)
         self._tomcat = Tomcat(self.checksLogger)
         self._activemq = ActiveMQ(self.checksLogger)
         self._solr = Solr(self.checksLogger)
         self._memcache = Memcache(self.checksLogger)
-        self._dogstream = Dogstreams.init(self.checksLogger, self.agentConfig)
-        self._ddforwarder = DdForwarder(self.checksLogger, self.agentConfig)
+        self._dogstream = Dogstreams.init(self.agentConfig)
+        self._ddforwarder = DdForwarder(self.agentConfig)
 
         self._event_checks = [Hudson(), Nagios(socket.gethostname())]
         self._resources_checks = [ResProcesses(self.checksLogger,self.agentConfig)]
@@ -124,134 +115,37 @@ class checks:
 
     def lastPostTs(self): return self.last_post_ts
 
-    #
-    # Checks - FIXME migrating to the new Check interface is a WIP
-    #
-    @recordsize 
-    def getApacheStatus(self):
-        return self._apache.check(self.agentConfig)
-
-    @recordsize 
-    def getCouchDBStatus(self):
-        return self._couchdb.check(self.agentConfig)
-    
-    @recordsize
-    def getDiskUsage(self):
-        return self._disk.check(self.checksLogger, self.agentConfig)
-
-    @recordsize
-    def getIOStats(self):
-        return self._io.check(self.checksLogger, self.agentConfig)
-            
-    @recordsize
-    def getLoadAvrgs(self):
-        return self._load.check(self.checksLogger, self.agentConfig)
-
-    @recordsize 
-    def getMemoryUsage(self):
-        return self._memory.check(self.checksLogger, self.agentConfig)
-        
-    @recordsize     
-    def getMongoDBStatus(self):
-        return self._mongodb.check(self.agentConfig)
-
-    @recordsize
-    def getMySQLStatus(self):
-        return self._mysql.check(self.agentConfig)
-   
-    @recordsize
-    def getPgSQLStatus(self):
-        return self._pgsql.check(self.agentConfig)
- 
-    @recordsize
-    def getNetworkTraffic(self):
-        return self._network.check(self.checksLogger, self.agentConfig)
-    
-    @recordsize
-    def getNginxStatus(self):
-        return self._nginx.check(self.agentConfig)
-        
-    @recordsize
-    def getProcesses(self):
-        return self._processes.check(self.checksLogger, self.agentConfig)
-        
-    @recordsize
-    def getRabbitMQStatus(self):
-        return self._rabbitmq.check(self.checksLogger, self.agentConfig)
-
-    @recordsize
-    def getGangliaData(self):
-        return self._ganglia.check(self.checksLogger, self.agentConfig)
-
-    @recordsize
-    def getCassandraData(self):
-        return self._cassandra.check(self.checksLogger, self.agentConfig)
-
-    @recordsize
-    def getRedisData(self):
-        return self._redis.check(self.agentConfig)
-
-    @recordsize
-    def getJvmData(self):
-        return self._jvm.check(self.agentConfig)
-
-    @recordsize
-    def getTomcatData(self):
-        return self._tomcat.check(self.agentConfig)
-
-    @recordsize
-    def getActiveMQData(self):
-        return self._activemq.check(self.agentConfig)
-
-    @recordsize
-    def getSolrData(self):
-        return self._solr.check(self.agentConfig)
-
-    @recordsize
-    def getMemcacheData(self):
-        return self._memcache.check(self.agentConfig)
-
-    @recordsize
-    def getDogstreamData(self):
-        return self._dogstream.check(self.agentConfig)
-
-    @recordsize
-    def getDdforwarderData(self):
-        return self._ddforwarder.check(self.agentConfig)
-
-    @recordsize
-    def getCPUStats(self):
-        return self._cpu.check(self.checksLogger, self.agentConfig)
-
     def doChecks(self, firstRun=False, systemStats=False):
-        """Actual work
-        """
+        """Actual work"""
         self.checksLogger.info("Starting checks")
 
-        apacheStatus = self.getApacheStatus()
-        diskUsage = self.getDiskUsage()
-        loadAvrgs = self.getLoadAvrgs()
-        memory = self.getMemoryUsage()
-        mysqlStatus = self.getMySQLStatus()
-        pgsqlStatus = self.getPgSQLStatus()
-        networkTraffic = self.getNetworkTraffic()
-        nginxStatus = self.getNginxStatus()
-        processes = self.getProcesses()
-        rabbitmq = self.getRabbitMQStatus()
-        mongodb = self.getMongoDBStatus()
-        couchdb = self.getCouchDBStatus()
-        ioStats = self.getIOStats()
-        cpuStats = self.getCPUStats()
-        gangliaData = self.getGangliaData()
-        cassandraData = self.getCassandraData()
-        redisData = self.getRedisData()
-        jvmData = self.getJvmData()
-        tomcatData = self.getTomcatData()
-        activeMQData = self.getActiveMQData()
-        solrData = self.getSolrData()
-        memcacheData = self.getMemcacheData()
-        dogstreamData = self.getDogstreamData()
-        ddforwarderData = self.getDdforwarderData()
+        cpuStats  = self._cpu.check(self.agentConfig)
+        ioStats   = self._io.check(self.agentConfig)
+        diskUsage = self._disk.check(self.agentConfig)
+        loadAvrgs = self._load.check(self.agentConfig)
+        memory    = self._memory.check(self.agentConfig)
+        processes = self._processes.check(self.agentConfig)
+
+        apacheStatus   = self._apache.check(self.agentConfig)
+        mysqlStatus    = self._mysql.check(self.agentConfig)
+        pgsqlStatus    = self._pgsql.check(self.agentConfig)
+        networkTraffic = self._network.check(self.agentConfig)
+        nginxStatus    = self._nginx.check(self.agentConfig)
+        rabbitmq       = self._rabbitmq.check(self.agentConfig)
+        mongodb        = self._mongodb.check(self.agentConfig)
+        couchdb        = self._couchdb.check(self.agentConfig)
+
+        gangliaData    = self._ganglia.check(self.agentConfig)
+        cassandraData  = self._cassandra.check(self.agentConfig)
+        redisData      = self._redis.check(self.agentConfig)
+        jvmData        = self._jvm.check(self.agentConfig)
+        tomcatData     = self._tomcat.check(self.agentConfig)
+        activeMQData   = self._activemq.check(self.agentConfig)
+        solrData       = self._solr.check(self.agentConfig)
+        memcacheData   = self._memcache.check(self.agentConfig)
+        dogstreamData  = self._dogstream.check(self.agentConfig)
+        ddforwarderData = self._ddforwarder.check(self.agentConfig)
+        self.checksLogger.info("Checks done")
 
         checksData = {
             'collection_timestamp': time.time(),
@@ -286,65 +180,26 @@ class checks:
         if cassandraData is not False and cassandraData is not None:
             checksData['cassandra'] = cassandraData
  
-        # Apache Status
-        if apacheStatus: 
-            checksData.update(apacheStatus)
-            
-        # MySQL Status
-        if mysqlStatus:
-            checksData.update(mysqlStatus)
-       
-        # PostgreSQL status
-        if pgsqlStatus: 
-            checksData['postgresql'] = pgsqlStatus
-
-        # Nginx Status
-        if nginxStatus:
-            checksData.update(nginxStatus)
-            
-        # RabbitMQ
-        if rabbitmq:
-            checksData['rabbitMQ'] = rabbitmq
-        
-        # MongoDB
-        if mongodb:
-            checksData['mongoDB'] = mongodb
-            
-        # CouchDB
-        if couchdb:
-            checksData['couchDB'] = couchdb
-        
-        if ioStats:
-            checksData['ioStats'] = ioStats
-            
-        if redisData:
-            checksData['redis'] = redisData
-       
-        if jvmData:
-            checksData['jvm'] = jvmData
-
-        if tomcatData:
-            checksData['tomcat'] = tomcatData
-
-        if activeMQData:
-            checksData['activemq'] = activeMQData
-
-        if solrData:
-            checksData['solr'] = solrData
-
-        if memcacheData:
-            checksData['memcache'] = memcacheData
-        
-        if dogstreamData:
-            checksData.update(dogstreamData)
-
-        if ddforwarderData:
-            checksData['datadog'] = ddforwarderData
+        if apacheStatus:    checksData.update(apacheStatus)
+        if mysqlStatus:     checksData.update(mysqlStatus)
+        if pgsqlStatus:     checksData['postgresql'] = pgsqlStatus
+        if nginxStatus:     checksData.update(nginxStatus)
+        if rabbitmq:        checksData['rabbitMQ'] = rabbitmq
+        if mongodb:         checksData['mongoDB'] = mongodb
+        if couchdb:         checksData['couchDB'] = couchdb
+        if ioStats:         checksData['ioStats'] = ioStats
+        if redisData:       checksData['redis'] = redisData
+        if jvmData:         checksData['jvm'] = jvmData
+        if tomcatData:      checksData['tomcat'] = tomcatData
+        if activeMQData:    checksData['activemq'] = activeMQData
+        if solrData:        checksData['solr'] = solrData
+        if memcacheData:    checksData['memcache'] = memcacheData
+        if dogstreamData:   checksData.update(dogstreamData)
+        if ddforwarderData: checksData['datadog'] = ddforwarderData
  
         # Include server indentifiers
         checksData['internalHostname'] = gethostname(self.agentConfig)
         checksData['uuid'] = getUuid()
-        self.checksLogger.debug('doChecks: added uuid %s' % checksData['uuid'])
         
         # Process the event checks. 
         for event_check in self._event_checks:
@@ -390,7 +245,6 @@ class checks:
         self.checksLogger.debug("checksData: %s" % checksData)
         self.emitter(checksData, self.checksLogger, self.agentConfig)
         self.updateLastPostTs()
-        self.checksLogger.info("Checks done")
         
     def getMountedLinuxProcFsLocation(self):
         # Lets check if the Linux like style procfs is mounted
