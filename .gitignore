@@ -3,3 +3,5 @@
 build/*
 datadog.conf
 datadog_agent.egg-info/*
+/packaging/datadog-agent-base/datadog_agent_base.egg-info/*
+/packaging/datadog-agent-lib/checks
