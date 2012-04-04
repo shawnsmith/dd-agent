@@ -68,7 +68,7 @@ class MongoDb(Check):
         except:
             return None
 
-    def check(self, agentConfig):
+    def check(self, agentConfig, version=1):
         """
         Returns a dictionary that looks a lot like what's sent back by db.serverStatus()
         """
@@ -171,7 +171,10 @@ class MongoDb(Check):
                     except UnknownValue:
                         pass
 
-                return r
+                if version == 1:
+                    return r
+                elif version == 2:
+                    raise Exception("Not supported")
 
         except ImportError:
             self.logger.exception('Unable to import pymongo library.')
@@ -186,4 +189,3 @@ if __name__ == "__main__":
     agentConfig = { 'mongodb_server': 'localhost:27017' }
     db = MongoDb(logging)
     print db.check(agentConfig)
-   

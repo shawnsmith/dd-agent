@@ -183,6 +183,13 @@ class Check(object):
                 pass
         return values
 
+    def check(self, config, version=1):
+        """Performs actual checks.
+        The `version` pertains to the format of the return values
+        Version 1 is pretty much free-form
+        Version 2 is a list of (metric_name, metric_value, timestamp, type, {attributes})
+        """
+
 def gethostname(agentConfig):
     if agentConfig.has_key("hostname") and agentConfig['hostname'] is not None:
         return agentConfig['hostname']
