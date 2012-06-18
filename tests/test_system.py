@@ -1,6 +1,7 @@
 import unittest
 import logging
 import sys
+logging.basicConfig(level=logging.DEBUG)
 
 logger = logging.getLogger(__file__)
 

@@ -574,6 +574,7 @@ class Cpu(object):
 
         if sys.platform == 'linux2':
             mpstat = subprocess.Popen(['mpstat', '1', '3'], stdout=subprocess.PIPE, close_fds=True).communicate()[0]
+            logger.debug('getCPUStats: mpstat ran => %s' % mpstat)
             # topdog@ip:~$ mpstat 1 3
             # Linux 2.6.32-341-ec2 (ip) 	01/19/2012 	_x86_64_	(2 CPU)
             #
