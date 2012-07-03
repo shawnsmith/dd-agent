@@ -1,8 +1,7 @@
 #! /bin/bash
 set -e
-suprunning=$(pgrep -fl supervisord)
 
-if [[ -z $suprunning ]]; then
+if [[ -z $(pgrep -fl supervisord) ]]; then
     echo "[postrm] Starting supervisor"
     service supervisor start
 fi

@@ -14,10 +14,9 @@ set -e
 # supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 shutdown=0
-suprunning=$(pgrep -fl supervisord)
 
 if [ -f /etc/supervisor/conf.d/ddagent.conf ]; then
-    if [ -n "$suprunning" ]; then
+    if [ -n $(pgrep -fl supervisord) ]; then
 	brokenconf=$(grep /var/tmp/datadog-supervisor.sock /etc/supervisor/conf.d/ddagent.conf | wc -l)
 	if [ $brokenconf -gt 0 ]; then
 	    brokenproc=$(supervisorctl status | grep 'no such file' | wc -l)
@@ -39,7 +38,7 @@ if [ -f /etc/supervisor/conf.d/ddagent.conf ]; then
     fi
 fi
 
-if [[ -n $suprunning && $shutdown -eq 0 ]]; then
+if [[ $shutdown -eq 0 ]]; then
     if [ -f /etc/init.d/datadog-agent ]; then
 	if which invoke-rc.d >/dev/null 2>&1; then
             invoke-rc.d datadog-agent stop
