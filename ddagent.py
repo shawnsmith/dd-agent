@@ -150,15 +150,20 @@ class StatusHandler(tornado.web.RequestHandler):
 
     def get(self):
         threshold = int(self.get_argument('threshold', -1))
+        # json or plain text
+        fmt = self.get_argument('format', default=['txt'])[0]
 
         m = MetricTransaction.get_tr_manager()
-
-        self.write("<table><tr><td>Id</td><td>Size</td><td>Error count</td><td>Next flush</td></tr>")
         transactions = m.get_transactions()
-        for tr in transactions:
-            self.write("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % 
-                (tr.get_id(), tr.get_size(), tr.get_error_count(), tr.get_next_flush()))
-        self.write("</table>")
+
+        if fmt.lower() == u'json':
+            self.set_header('Content-Type', 'application/json')
+            self.write({'transactions': [[tr.get_id(), tr.get_size(), tr.get_error_count(), tr.get_next_flush()] for tr in transactions]})
+        else:
+            self.set_header('Content-Type', 'text/plain')
+            self.write("DATADOG")
+            for tr in transactions:
+                self.write("Id={0} size={1} errors={2} flush={3}".format((tr.get_id(), tr.get_size(), tr.get_error_count(), tr.get_next_flush())))
 
         if threshold >= 0:
             if len(transactions) > threshold:
