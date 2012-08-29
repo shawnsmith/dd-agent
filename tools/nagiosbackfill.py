@@ -134,7 +134,7 @@ ok = 0
 for e in events:
     x = transform(e)
     if x is not None:
-        print("(E) {0} {1}".format(time.ctime(int(x.get("timestamp"))), x.get("msg_title")))
+        print("(E) [{0}] {1} {2}".format(x.get("timestamp"), time.ctime(int(x.get("timestamp"))), x.get("msg_title")))
         dog.event(title=x.get("msg_title"),
                   text=x.get("msg_text"),
                   date_happened=x.get("timestamp"),
