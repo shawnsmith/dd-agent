@@ -53,6 +53,11 @@ class agent(Daemon):
         # Load the checks.d checks
         checksd = load_check_directory(agentConfig)
 
+        # If the hostname field is set but empty, cry and die
+        if agentConfig.get("hostname") is not None and agentConfig.get("hostname").strip() == "":
+            agentLogger.error("Cannot proceed with a hostname that is set to the empty string. Correct or comment out hostname in datadog.conf")
+            sys.exit(3)
+        
         # Try to fetch instance Id from EC2 if not hostname has been set
         # in the config file
         if agentConfig.get('hostname') is None and agentConfig.get('use_ec2_instance_id'):
