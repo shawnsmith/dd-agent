@@ -1,0 +1,548 @@
+Keyspace: system
+	Read Count: 44
+	Read Latency: 2.053068181818182 ms.
+	Write Count: 9
+	Write Latency: 4.243 ms.
+	Pending Tasks: 0
+		Column Family: NodeIdInfo
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: HintsColumnFamily
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: schema_columns
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 32
+		Read Latency: 0.036 ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: Migrations
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: LocationInfo
+		SSTable count: 1
+		Space used (live): 6920
+		Space used (total): 6920
+		Number of Keys (estimate): 128
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 2
+		Read Count: 9
+		Read Latency: 2.974 ms.
+		Write Count: 3
+		Write Latency: 0.456 ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 1936
+		Compacted row minimum size: 73
+		Compacted row maximum size: 258
+		Compacted row mean size: 187
+
+		Column Family: schema_keyspaces
+		SSTable count: 2
+		Space used (live): 10428
+		Space used (total): 10428
+		Number of Keys (estimate): 256
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 48
+		Compacted row minimum size: 216
+		Compacted row maximum size: 258
+		Compacted row mean size: 258
+
+		Column Family: Versions
+		SSTable count: 4
+		Space used (live): 20801
+		Space used (total): 20801
+		Number of Keys (estimate): 512
+		Memtable Columns Count: 3
+		Memtable Data Size: 103
+		Memtable Switch Count: 1
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 6
+		Write Latency: 6.137 ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 2008
+		Compacted row minimum size: 73
+		Compacted row maximum size: 86
+		Compacted row mean size: 86
+
+		Column Family: Schema
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: schema_columnfamilies
+		SSTable count: 2
+		Space used (live): 47246
+		Space used (total): 47246
+		Number of Keys (estimate): 256
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 3
+		Read Latency: 20.803 ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 48
+		Compacted row minimum size: 925
+		Compacted row maximum size: 9887
+		Compacted row mean size: 6961
+
+		Column Family: IndexInfo
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+----------------
+Keyspace: alq
+	Read Count: 0
+	Read Latency: NaN ms.
+	Write Count: 0
+	Write Latency: NaN ms.
+	Pending Tasks: 0
+		Column Family: x
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+----------------
+Keyspace: Intake
+	Read Count: 0
+	Read Latency: NaN ms.
+	Write Count: 0
+	Write Latency: NaN ms.
+	Pending Tasks: 0
+		Column Family: Events
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: Resources
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: ResourcesMetadata
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: ResourcesStringCache
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: Events2
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: Encodings
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: Metrics
+		SSTable count: 2
+		Space used (live): 9006
+		Space used (total): 9006
+		Number of Keys (estimate): 256
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 32
+		Compacted row minimum size: 73
+		Compacted row maximum size: 86
+		Compacted row mean size: 86
+
+----------------
+Keyspace: OpsCenter
+	Read Count: 0
+	Read Latency: NaN ms.
+	Write Count: 0
+	Write Latency: NaN ms.
+	Pending Tasks: 0
+		Column Family: settings
+		SSTable count: 1
+		Space used (live): 4935
+		Space used (total): 4935
+		Number of Keys (estimate): 128
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 16
+		Compacted row minimum size: 87
+		Compacted row maximum size: 446
+		Compacted row mean size: 275
+
+		Column Family: rollups60
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: rollups7200
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: rollups86400
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: pdps
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: events_timeline
+		SSTable count: 2
+		Space used (live): 9214
+		Space used (total): 9214
+		Number of Keys (estimate): 256
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 32
+		Compacted row minimum size: 73
+		Compacted row maximum size: 149
+		Compacted row mean size: 106
+
+		Column Family: rollups300
+		SSTable count: 0
+		Space used (live): 0
+		Space used (total): 0
+		Number of Keys (estimate): 0
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 0
+		Compacted row minimum size: 0
+		Compacted row maximum size: 0
+		Compacted row mean size: 0
+
+		Column Family: events
+		SSTable count: 2
+		Space used (live): 10118
+		Space used (total): 10118
+		Number of Keys (estimate): 256
+		Memtable Columns Count: 0
+		Memtable Data Size: 0
+		Memtable Switch Count: 0
+		Read Count: 0
+		Read Latency: NaN ms.
+		Write Count: 0
+		Write Latency: NaN ms.
+		Pending Tasks: 0
+		Bloom Filter False Postives: 0
+		Bloom Filter False Ratio: 0.00000
+		Bloom Filter Space Used: 40
+		Compacted row minimum size: 216
+		Compacted row maximum size: 258
+		Compacted row mean size: 258
+
+----------------

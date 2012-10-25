@@ -1,0 +1,12 @@
+Token            : 108626453791023819065528501065129902511
+Gossip active    : true
+Thrift active    : true
+Load             : 115.89 KB
+Generation No    : 1351113554
+Uptime (seconds) : 112
+Heap Memory (MB) : 37.30 / 1004.00
+Data Center      : datacenter1
+Rack             : rack1
+Exceptions       : 0
+Key Cache        : size 720 (bytes), capacity 52428768 (bytes), 8 hits, 20 requests, 0.400 recent hit rate, 14400 save period in seconds
+Row Cache        : size 0 (bytes), capacity 0 (bytes), 0 hits, 0 requests, NaN recent hit rate, 0 save period in seconds

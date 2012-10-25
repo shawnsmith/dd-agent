@@ -2,22 +2,21 @@ import logging
 import unittest
 import os
 import os.path
-
 from nose.plugins.attrib import attr
 
 from checks.cassandra import Cassandra
-
-
-
 logger = logging.getLogger(__name__)
 
 class TestCassandra(unittest.TestCase):
     def setUp(self):
         self.info = open(os.path.join(os.path.dirname(__file__), "cassandra", "info"), "r").read()
         self.info8 = open(os.path.join(os.path.dirname(__file__), "cassandra", "info.8"), "r").read()
+        self.info116 = open(os.path.join(os.path.dirname(__file__), "cassandra", "info.116"), "r").read()
         self.tpstats = open(os.path.join(os.path.dirname(__file__), "cassandra", "tpstats"), "r").read()
         self.tpstats8 = open(os.path.join(os.path.dirname(__file__), "cassandra", "tpstats.8"), "r").read()
+        self.tpstats116 = open(os.path.join(os.path.dirname(__file__), "cassandra", "tpstats.116"), "r").read()
         self.cfstats = open(os.path.join(os.path.dirname(__file__), "cassandra", "cfstats"), "r").read()
+        self.cfstats116 = open(os.path.join(os.path.dirname(__file__), "cassandra", "cfstats.116"), "r").read()
         self.info_opp = open(os.path.join(os.path.dirname(__file__), "cassandra", "info.opp"), "r").read()
         self.c = Cassandra()
         
@@ -60,7 +59,13 @@ class TestCassandra(unittest.TestCase):
         res = {}
         self.c._parseCfstats(self.cfstats, res)
         self.assertNotEquals(len(res.keys()), 0)
-        
+        # v 1.1.6
+        res = {}
+        self.c._parseCfstats(self.cfstats116, res)
+        self.assertEquals(res["number_of_keys_estimate.OpsCenter:events_timeline"], 256.0)
+        self.assertEquals(res["read_count.Intake:Events"], 0.0)
+        self.assertEquals(res["read_count.Intake"], 0.0)
+
     @attr('cassandra')
     def testParseTpstats(self):
         res = {}

@@ -1,0 +1,24 @@
+Pool Name                    Active   Pending      Completed   Blocked  All time blocked
+ReadStage                         0         0              0         0                 0
+RequestResponseStage              0         0              0         0                 0
+MutationStage                     0         0              6         0                 0
+ReadRepairStage                   0         0              0         0                 0
+ReplicateOnWriteStage             0         0              0         0                 0
+GossipStage                       0         0              0         0                 0
+AntiEntropyStage                  0         0              0         0                 0
+MigrationStage                    0         0              0         0                 0
+MemtablePostFlusher               0         0              3         0                 0
+StreamStage                       0         0              0         0                 0
+FlushWriter                       0         0              3         0                 0
+MiscStage                         0         0              0         0                 0
+commitlog_archiver                0         0              0         0                 0
+InternalResponseStage             0         0              0         0                 0
+HintedHandoff                     0         0              0         0                 0
+
+Message type           Dropped
+RANGE_SLICE                  0
+READ_REPAIR                  0
+BINARY                       0
+READ                         0
+MUTATION                     0
+REQUEST_RESPONSE             0
