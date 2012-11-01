@@ -1,39 +1,38 @@
-"""Check cassandra cluster health via nodetool.
+"""Cassandra metrics from JMX
 """
-from subprocess import Popen, PIPE
-import os.path
-import re
-import itertools
 
-def _fst(groups):
-    if groups is not None and len(groups) > 0:
-        return groups[0]
-    else:
-        return None
+from checks import *
+from checks.jmx import JMXConnector
 
-class Cassandra(object):    
-
-    UNITS_FACTOR = {
-         'bytes': 1,
-         'KB': 1024,
-         'MB': 1024**2,
-         'GB': 1024**3,
-         'TB': 1024**4 }
-
-
-    @staticmethod
-    def _find(lines, regex, postprocess=_fst, all=False):
-        """Poor man's awk"""
-        r = re.compile(regex)
-        matches = [r.search(l) for l in lines if r.match(l)]
-        res = [postprocess(m.groups()) for m in matches if m is not None and m.groups is not None]
-        if all:
-            return res
-        else:
-            if res is None or len(res) == 0:
-                return None
+class Cassandra(AgentCheck):
+    def __init__(self, name, init_config, agentConfig):
+        AgentCheck.__init__(self, name, init_config, agentConfig)
+        try:
+            self._jmx = JMXConnector(self.log)
+            # extract configuration
+            host = agentConfig.get("cassandra_host", None)
+            port = agentConfig.get("cassandra_port", 7199)
+            if host is None:
+                self.enabled = False
             else:
-                return res[0]
+                self.log.info("Connecting to %s:%s" % (host, port))
+                self._jmx.connect("%s:%s" % (host, port))
+                self.enabled = True
+        except ImportError, e:
+            self.enabled = False
+            self.log.error("Python module needed: %s" % str(e))
+        except Exception, e:
+            self.enabled = False
+            self.log.exception("Cannot connect to cassandra via JMX")
+
+    def _check_info(self):
+        pass
+
+    def _check_cfstats(self):
+        pass
+
+    def _check_tpstats(self):
+        pass
 
     def _parseInfo(self, info, results, logger):
         """

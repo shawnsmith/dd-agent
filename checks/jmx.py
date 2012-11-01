@@ -1,15 +1,13 @@
-#stdlib
 import sys
 import time
 import re
 import os
 
-# project
 from checks import Check
 
-class JmxConnector:
+class JmxConnector(object):
     """Persistent connection to JMX endpoint.
-    Uses jmxterm to read from JMX
+    Uses java, pexpect and jmxterm to read from JMX
     """
     attr_re = re.compile(r"(.*)=(.*);")
 
@@ -24,7 +22,6 @@ class JmxConnector:
         return self._jmx is not None
 
     def connect(self, connection, user=None, passwd=None, timeout=15):
-        # third party 
         import pexpect
         if self._jmx is not None:
             if self._jmx.isalive():
@@ -45,9 +42,10 @@ class JmxConnector:
         if passwd is not None:
             cnt = cnt + " -p " + passwd
         self._jmx.sendline(cnt)
-        self._jmx.expect_exact("#Connection to "+connection+" is opened")
-        self.logger.info("Connection to "+connection+" is opened")
+        self._jmx.expect_exact("#Connection to " + connection + " is opened")
+        self.logger.info("Connection to " + connection + " is opened")
         self._wait_prompt()
+        return True
 
     def set_domain(self,domain):
         self._jmx.sendline("domain " + domain)
@@ -147,9 +145,7 @@ class JmxConnector:
 
         return ret
 
-
 class Jvm(Check):
-
     def __init__(self, logger):
         Check.__init__(self, logger)
         self.jmx = JmxConnector(logger)
