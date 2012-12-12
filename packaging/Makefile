@@ -53,6 +53,7 @@ install_base: source
 	mkdir -p $(BUILD)
 	mkdir -p $(BUILD)/usr/share/datadog/agent
 	mkdir -p $(BUILD)/etc/dd-agent
+	mkdir -p $(BUILD)/etc/dd-agent/conf.d
 	mkdir -p $(BUILD)/usr/bin
 	# Install the common source & config.
 	cp -r $(ROOT)/*		 $(BUILD)/usr/share/datadog/agent/
