@@ -154,7 +154,7 @@ $(FPM_BUILD) -t deb \
 --conflicts "datadog-agent-lib (<< 3.4.0)" \
 --replaces "datadog-agent-lib (<< 3.4.0)" \
 --conflicts "datadog-agent-base (<< $(VERSION))" \
---replaces "datadog-agent-bsae (<< $(VERSION)" \
+--replaces "datadog-agent-base (<< $(VERSION)" \
 --config-files "/etc/dd-agent/supervisor_ddagent.conf" \
 --post-install datadog-agent-deb/postinst \
 --post-uninstall datadog-agent-deb/postrm \
