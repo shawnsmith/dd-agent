@@ -158,8 +158,12 @@ class Agent(Daemon):
         # clean-up like an agent exit
         self._cleanup()
 
-        # restart the agent without sending a start event
-        args = [sys.executable] + sys.argv + ['--disable-start-event']
+        # disable the start event only once, otherwise you will get the argument
+        # repeated over and over for each subsequent restart call.
+        args = [sys.executable] + sys.argv
+        if '--disable-start-event' not in args:
+            args.append('--disable-start-event')
+
         os.execl(sys.executable, *args)
 
 def setup_logging(agentConfig):
