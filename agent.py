@@ -51,10 +51,11 @@ class Agent(Daemon):
     The agent class is a daemon that runs the collector in a background process.
     """
 
-    def __init__(self, pidfile, run_args):
-        Daemon.__init__(self, pidfile, run_args)
+    def __init__(self, pidfile, options, run_args):
+        Daemon.__init__(self, pidfile, options, run_args)
         self.run_forever = True
         self.collector = None
+        self.options = options
         self.run_args = run_args
 
     def _handle_sigterm(self, signum, frame):
@@ -91,7 +92,8 @@ class Agent(Daemon):
         self.agent_start = time.time()
         while self.run_forever:
             # Do the work.
-            self.collector.run(checksd=checksd)
+            self.collector.run(checksd=checksd,
+                    disable_start_event=self.options.disable_start_event)
 
             # Only plan for the next loop if we will continue,
             # otherwise just exit quickly.
@@ -102,16 +104,19 @@ class Agent(Daemon):
                     self._do_restart()
                 time.sleep(check_frequency)
 
-        # Now clean-up.
-        try:
-            CollectorStatus.remove_latest_status()
-        except:
-            pass
+        # Clean-up before exit.
+        self._cleanup()
 
         # Explicitly kill the process, because it might be running
         # as a daemon.
         agent_logger.info("Exiting. Bye bye.")
         sys.exit(0)
+
+    def _cleanup(self):
+        try:
+            CollectorStatus.remove_latest_status()
+        except:
+            pass
 
     def _get_emitters(self, agentConfig):
         emitters = [http_emitter]
@@ -149,8 +154,13 @@ class Agent(Daemon):
     def _do_restart(self):
         agent_logger.info('Restarting the agent after running for %s seconds.' \
             % self.restart_interval)
-        # restart the agent within itself
-        os.execl(sys.executable, *([sys.executable]+sys.argv))
+
+        # clean-up like an agent exit
+        self._cleanup()
+
+        # restart the agent without sending a start event
+        args = [sys.executable] + sys.argv + ['--disable-start-event']
+        os.execl(sys.executable, *args)
 
 def setup_logging(agentConfig):
     """Configure logging to use syslog whenever possible.
@@ -216,7 +226,7 @@ def main():
         if options.clean:
             pid_file.clean()
 
-        agent = Agent(pid_file.get_path(), sys.argv)
+        agent = Agent(pid_file.get_path(), options, sys.argv)
 
         if 'start' == command:
             logging.info('Start daemon')

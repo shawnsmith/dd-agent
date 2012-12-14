@@ -134,7 +134,7 @@ class Collector(object):
         # Best to not even try.
         self.continue_running = False
     
-    def run(self, checksd=None):
+    def run(self, checksd=None, disable_start_event=False):
         """
         Collect data from each check and submit their data.
         """
@@ -142,7 +142,7 @@ class Collector(object):
         self.run_count += 1
         logger.info("Starting collection run #%s" % self.run_count)
 
-        payload = self._build_payload()
+        payload = self._build_payload(disable_start_event)
         metrics = payload['metrics']
         events = payload['events']
 
@@ -350,7 +350,7 @@ class Collector(object):
     def _is_first_run(self):
         return self.run_count <= 1
 
-    def _build_payload(self):
+    def _build_payload(self, disable_start_event=False):
         """
         Return an dictionary that contains all of the generic payload data.
         """
@@ -369,7 +369,7 @@ class Collector(object):
         }
 
         # Include system stats on first postback
-        if self._is_first_run():
+        if not disable_start_event and self._is_first_run():
             payload['systemStats'] = self.agentConfig.get('systemStats', {})
             # Also post an event in the newsfeed
             payload['events']['System'] = [{'api_key': self.agentConfig['api_key'],

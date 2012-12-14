@@ -30,6 +30,8 @@ def get_parsed_args():
                         default=False,dest='use_forwarder')
     parser.add_option('-n', '--disable-dd', action='store_true', default=False,
                         dest="disable_dd")
+    parser.add_option('--disable-start-event', action='store_true', default=False,
+                        dest='disable_start_event')
     try:
         options, args = parser.parse_args()
     except SystemExit:
