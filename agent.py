@@ -40,6 +40,7 @@ from util import Watchdog, PidFile
 # Constants
 PID_NAME = "dd-agent"
 WATCHDOG_MULTIPLIER = 10
+RESTART_INTERVAL = 4 * 24 * 60 * 60 # 4 days
 
 # Globals
 agent_logger = logging.getLogger('agent')
@@ -50,10 +51,11 @@ class Agent(Daemon):
     The agent class is a daemon that runs the collector in a background process.
     """
 
-    def __init__(self, pidfile):
-        Daemon.__init__(self, pidfile)
+    def __init__(self, pidfile, run_args):
+        Daemon.__init__(self, pidfile, run_args)
         self.run_forever = True
         self.collector = None
+        self.run_args = run_args
 
     def _handle_sigterm(self, signum, frame):
         agent_logger.debug("Caught sigterm. Stopping run loop.")
@@ -63,7 +65,6 @@ class Agent(Daemon):
 
     def run(self):
         """Main loop of the collector"""
-
         # Gracefully exit on sigterm.
         signal.signal(signal.SIGTERM, self._handle_sigterm)
 
@@ -76,14 +77,18 @@ class Agent(Daemon):
         emitters = self._get_emitters(agentConfig)
         self.collector = Collector(agentConfig, emitters, systemStats)
 
+        # Initialize the auto-restart
+        self.restart_interval = int(agentConfig.get('restart_interval', RESTART_INTERVAL))
+
         # Load the checks.d checks
         checksd = load_check_directory(agentConfig)
 
         # Configure the watchdog.
         check_frequency = int(agentConfig['check_freq'])
         watchdog = self._get_watchdog(check_frequency, agentConfig)
-       
+
         # Run the main loop.
+        self.agent_start = time.time()
         while self.run_forever:
             # Do the work.
             self.collector.run(checksd=checksd)
@@ -93,6 +98,8 @@ class Agent(Daemon):
             if self.run_forever:
                 if watchdog:
                     watchdog.reset()
+                if self._should_restart():
+                    self._do_restart()
                 time.sleep(check_frequency)
 
         # Now clean-up.
@@ -133,6 +140,17 @@ class Agent(Daemon):
                 agent_logger.info('Not running on EC2, using hostname to identify this server')
         return agentConfig
 
+    def _should_restart(self):
+        now = time.time()
+        if now - self.agent_start >= self.restart_interval:
+            return True
+        return False
+
+    def _do_restart(self):
+        agent_logger.info('Restarting the agent after running for %s seconds.' \
+            % self.restart_interval)
+        # restart the agent within itself
+        os.execl(sys.executable, *([sys.executable]+sys.argv))
 
 def setup_logging(agentConfig):
     """Configure logging to use syslog whenever possible.
@@ -171,7 +189,6 @@ def main():
     # Logging
     setup_logging(agentConfig)
 
-
     COMMANDS = [
         'start',
         'stop',
@@ -199,7 +216,7 @@ def main():
         if options.clean:
             pid_file.clean()
 
-        agent = Agent(pid_file.get_path())
+        agent = Agent(pid_file.get_path(), sys.argv)
 
         if 'start' == command:
             logging.info('Start daemon')
