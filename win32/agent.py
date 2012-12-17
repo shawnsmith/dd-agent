@@ -47,6 +47,10 @@ class AgentSvc(win32serviceutil.ServiceFramework):
         }), []
         agentConfig = get_config(init_logging=True, parse_args=False,
             options=opts)
+
+        # Create the registry key, if needed
+        AgentRegistry.init()
+
         self.agent = DDAgent(agentConfig)
         self.restart_interval = int(agentConfig.get('restart_interval', RESTART_INTERVAL))
 
@@ -179,6 +183,15 @@ class DogstatsdThread(threading.Thread):
 
 class AgentRegistry(object):
     REGISTRY_KEY = r'Software\Datadog\Datadog Agent\Main'
+
+    @classmethod
+    def init(cls):
+        try:
+            _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, cls.REGISTRY_KEY,
+                0, _winreg.KEY_ALL_ACCESS)
+        except WindowsError:
+            # Create the registry key if we haven't already
+            _winreg.CreateKey(_winreg.HKEY_CURRENT_USER, cls.REGISTRY_KEY)
 
     @classmethod
     def get_value(cls, value):
