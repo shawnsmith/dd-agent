@@ -8,8 +8,10 @@ import tornado.httpclient
 import threading
 import modules
 import time
-
+import _winreg
+import os
 from optparse import Values
+
 from checks.collector import Collector
 from emitter import http_emitter
 from win32.common import handle_exe_click
@@ -18,6 +20,11 @@ from ddagent import Application
 from config import (get_config, set_win32_cert_path, get_system_stats,
     load_check_directory)
 from win32.common import handle_exe_click
+
+RESTART_INTERVAL = 4 * 24 * 60 * 60 # 4 days
+
+# Globals
+agent_logger = logging.getLogger('agent')
 
 class AgentSvc(win32serviceutil.ServiceFramework):
     _svc_name_ = "ddagent"
@@ -41,6 +48,7 @@ class AgentSvc(win32serviceutil.ServiceFramework):
         agentConfig = get_config(init_logging=True, parse_args=False,
             options=opts)
         self.agent = DDAgent(agentConfig)
+        self.restart_interval = int(agentConfig.get('restart_interval', RESTART_INTERVAL))
 
     def SvcStop(self):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
@@ -65,8 +73,26 @@ class AgentSvc(win32serviceutil.ServiceFramework):
         # running in separate threads
         self.running = True
         while self.running:
-            time.sleep(1)
+            if self._should_restart():
+                self._do_restart()
+            else:
+                time.sleep(1)
 
+    def _should_restart(self):
+        now = time.time()
+        if now - self.agent_start >= self.restart_interval:
+            return True
+        return False
+
+    def _do_restart(self):
+        agent_logger.log("Going to restart the agent because %s seconds have passed" \
+             % (self.restart_interval))
+
+        # Flip the 'autorestart' flag so the agent start event isn't sent
+        AgentRegistry.set_value('autorestart', 1)
+
+        # Make a call to "net" to stop and start this service
+        os.system("net stop DatadogAgent && net start DatadogAgent")
 
 class DDAgent(threading.Thread):
     def __init__(self, agentConfig):
@@ -79,6 +105,7 @@ class DDAgent(threading.Thread):
         emitters = self.get_emitters()
         systemStats = get_system_stats()
         collector = Collector(self.config, emitters, systemStats)
+        disable_start_event = self._should_disable_start_event()
 
         # Load the checks.d checks
         checksd = load_check_directory(self.config)
@@ -102,6 +129,20 @@ class DDAgent(threading.Thread):
 
         return emitters
 
+    def _should_disable_start_event(self):
+        ''' Read the 'autorestart' flag from the Agent registry. If it is marked
+            as true (>0) then we should not send an Agent start event. We also
+            want to flip the flag back off.
+        '''
+        autorestart = AgentRegistry.get_value('autorestart')
+        if autorestart > 0:
+            # turn the flag off
+            AgentRegistry.set_value('autorestart', 0)
+            return True
+
+        return False
+
+
 class DDForwarder(threading.Thread):
     def __init__(self, agentConfig):
         threading.Thread.__init__(self)
@@ -116,10 +157,11 @@ class DDForwarder(threading.Thread):
         self.forwarder = Application(port, agentConfig, watchdog=False)
 
     def run(self):
-        self.forwarder.run()        
+        self.forwarder.run()
 
     def stop(self):
         self.forwarder.stop()
+
 
 class DogstatsdThread(threading.Thread):
     def __init__(self, agentConfig):
@@ -133,6 +175,33 @@ class DogstatsdThread(threading.Thread):
     def stop(self):
         self.server.stop()
         self.reporter.stop()
+
+
+class AgentRegistry(object):
+    REGISTRY_KEY = r'Software\Datadog\Datadog Agent\Main'
+
+    @classmethod
+    def get_value(cls, value):
+        try:
+            key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, cls.REGISTRY_KEY,
+                0, _winreg.KEY_ALL_ACCESS)
+        except WindowsError:
+            # make this a better error message
+            raise Exception('Unable to open HKEY_CURRENT_USER\%s' % (cls.REGISTRY_KEY))
+
+        val, reg_type = _winreg.QueryValueEx(key, value)
+        return val
+
+    @classmethod
+    def set_value(cls, reg_key, value, value_type=_winreg.REG_DWORD):
+        try:
+            key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, cls.REGISTRY_KEY,
+                0, _winreg.KEY_ALL_ACCESS)
+        except WindowsError:
+            # make this a better error message
+            raise Exception('Unable to open HKEY_CURRENT_USER\%s' % (cls.REGISTRY_KEY))
+
+        _winreg.SetValueEx(key, reg_key, 0, value_type, value)
 
 
 if __name__ == '__main__':
